@@ -2,22 +2,28 @@ import pandas as pd
 import numpy as np
 from pandas.plotting import scatter_matrix
 from sklearn import svm, datasets
+from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.linear_model import LogisticRegression
 from matplotlib import pyplot
 import joblib
 
 # Load datasets
 iris = pd.read_csv('data/iris_data.csv')
+wine = pd.read_csv('data/wine_customer_segmentation.csv')
 
 # Features
 x = iris.iloc[:, :4]
+wine_x = wine.iloc[:, 0:13].values
 # Targets
 s = iris['species']
+wine_y = wine.iloc[:, 13].values
 
-print(iris.describe())
+# print(iris.describe())
 
 #######################################
 # Using support vector machines (SVM) #
@@ -134,7 +140,7 @@ def support_vector_machines():
 
   confusion()
 
-support_vector_machines()
+# support_vector_machines()
 
 #####################
 # Using Naive Bayes #
@@ -154,24 +160,62 @@ def naive_bayes():
   p = clf.predict([[5.5, 1.2, 4.8, 1.4]])
   print(f"Prediction Species: {scikit_iris.target_names[p[0]]}")
 
-naive_bayes()
+# naive_bayes()
 
 ############################################
 # Using Linear Discriminant Analysis (LDA) #
 ############################################
 def lda():
-  return 0
+  # Split to train and test
+  x_train, x_test, y_train, y_test = train_test_split(wine_x, wine_y, test_size = 0.2, random_state = 100)
+  
+  # Feature scaling
+  sc = StandardScaler()
+  x_train = sc.fit_transform(x_train)
+  x_test = sc.transform(x_test)
 
-lda()
+  # Apply LDA
+  lda = LDA(n_components = 2)
+  x_train = lda.fit_transform(x_train, y_train)
+  x_test = lda.transform(x_test)
+
+  # Fitting Logistic Regression to Training set
+  classifier = LogisticRegression(random_state = 0)
+  classifier.fit(x_train, y_train)
+
+  # Predict Test set results
+  y_pred = classifier.predict(x_test)
+
+  # Confusion matrix
+  cm = np.array(confusion_matrix(y_test, y_pred))
+  confusion = pd.DataFrame(cm, index=[1, 2, 3], columns=[1, 2, 3])
+
+  # Plotting
+  pyplot.figure(figsize = (10, 6))
+  colors = ['red', 'green', 'blue']
+  markers = ['o', 's', 'x']
+  for i, label in enumerate(np.unique(y_train)):
+    pyplot.scatter(x_train[y_train == label, 0], x_train[y_train == label, 1], c = colors[i], label = f'Class {label}', marker = markers[i])
+  pyplot.title('LDA: Training Set Projection')
+  pyplot.xlabel('LDA Component 1')
+  pyplot.ylabel('LDA Component 2')
+  pyplot.legend(title = 'Customer Segment')
+  pyplot.show()
+
+  print(confusion)
+  print(f"Accuracy Score:", accuracy_score(y_test, y_pred))
+
+# lda()
 
 ##########################
 # Classification Results #
 ##########################
 def classification_results():
-  names = ['SVM', 'Naive Bayes']
-  classifiers = [svm.SVC(), GaussianNB()]
+  names = ['SVM', 'Naive Bayes', 'LDA']
+  classifiers = [svm.SVC(), GaussianNB(), LDA()]
 
-  x, y = datasets.load_iris(return_X_y = True)
+  scikit_iris = datasets.load_iris()
+  x, y = scikit_iris.data, scikit_iris.target
   x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 100)
 
   for name, clf in zip(names, classifiers):
@@ -179,5 +223,10 @@ def classification_results():
     score = clf.score(x_test, y_test)
     score_percentage = score * 100
     print(f"{name}: {score_percentage}%")
+
+    # Prediction
+    p = clf.predict([[5.5, 1.2, 4.8, 1.4]])
+    print(f"{name} - Prediction Species: {scikit_iris.target_names[p[0]]}")
+    print("")
 
 classification_results()
