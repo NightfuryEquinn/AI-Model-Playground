@@ -3,14 +3,19 @@ import numpy as np
 from pandas.plotting import scatter_matrix
 from sklearn import svm, datasets
 from sklearn.datasets import make_classification
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.linear_model import LogisticRegression
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from matplotlib import pyplot
 import joblib
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 
 # Load datasets
 iris = pd.read_csv('data/iris_data.csv')
@@ -207,16 +212,173 @@ def lda():
 
 # lda()
 
+###############################################
+# Using Quadratic Discriminant Analysis (QDA) #
+###############################################
+def qda():
+  # Split to train and test
+  x_train, x_test, y_train, y_test = train_test_split(x, s, test_size = 0.2, random_state = 100)
+  
+  # Apply QDA
+  qda = QDA()
+  qda.fit(x_train, y_train)
+
+  # Predict
+  y_pred = qda.predict(x_test)
+
+  # Confusion matrix
+  cm = np.array(confusion_matrix(y_test, y_pred))
+  confusion = pd.DataFrame(cm, index=[1, 2, 3], columns=[1, 2, 3])
+
+  print(confusion)
+  print(f"Accuracy Score:", accuracy_score(y_test, y_pred))
+
+# qda()
+
+#################################################
+# Using Regularized Discriminant Analysis (RDA) #
+#################################################
+def rda():
+  # Split to train and test
+  x_train, x_test, y_train, y_test = train_test_split(x, s, test_size = 0.2, random_state = 100)
+  
+  # Apply QDA with regularization param
+  qda = QDA(reg_param = 0.5)
+  qda.fit(x_train, y_train)
+
+  # Predict
+  y_pred = qda.predict(x_test)
+
+  # Confusion matrix
+  cm = np.array(confusion_matrix(y_test, y_pred))
+  confusion = pd.DataFrame(cm, index=[1, 2, 3], columns=[1, 2, 3])
+
+  print(confusion)
+  print(f"Accuracy Score:", accuracy_score(y_test, y_pred))
+  
+# rda()
+
+#################
+# Decision Tree #
+#################
+def tree():
+  scikit_iris = datasets.load_iris()
+  x, y = scikit_iris.data, scikit_iris.target
+
+  # Split to train and test
+  x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 100)
+  
+  # Initialize and train the classifier
+  clf = DecisionTreeClassifier(criterion = 'gini', max_depth = 3, random_state = 100)
+  clf.fit(x_train, y_train)
+
+  pyplot.figure(figsize = (12, 8))
+  plot_tree(clf, filled = True, feature_names = scikit_iris.feature_names, class_names = scikit_iris.target_names)
+  pyplot.show()
+
+  # Predict
+  y_pred = clf.predict(x_test)
+
+  # Compute accuracy
+  print(f"Accuracy Score: ", accuracy_score(y_test, y_pred))
+  print(classification_report(y_test, y_pred, target_names = scikit_iris.target_names))
+
+# tree()
+
+#################
+# Random Forest #
+#################
+def forest():
+  scikit_iris = datasets.load_iris()
+  x, y = scikit_iris.data, scikit_iris.target
+
+  # Split to train and test
+  x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 100)
+
+  # Initialize Random Forest
+  clf = RandomForestClassifier(n_estimators = 100, random_state = 42)
+  clf.fit(x_train, y_train)
+
+  # Predict
+  y_pred = clf.predict(x_test)
+
+  # Visualizing one tree from the forest
+  pyplot.figure(figsize = (20, 10))
+  plot_tree(clf.estimators_[0], feature_names = scikit_iris.feature_names, class_names = scikit_iris.target_names, filled = True)
+  pyplot.show()
+
+  # Compute accuracy
+  print(f"Accuracy Score: ", accuracy_score(y_test, y_pred))
+
+# forest()
+
+##############################
+# K-Nearest Neighbours (KNN) #
+##############################
+def knn():
+  scikit_iris = datasets.load_iris()
+  x, y = scikit_iris.data, scikit_iris.target
+  x_vis = x[:, :2]
+
+  # Split to train and test
+  x_train, x_test, y_train, y_test = train_test_split(x_vis, y, test_size = 0.2, random_state = 100)
+
+  # Create and train KNN classifier
+  knn = KNeighborsClassifier(n_neighbors = 5)
+  knn.fit(x_train, y_train)
+
+  # Predict
+  y_pred = knn.predict(x_test)
+  print("Total points: ", y_test.shape[0])
+  print("Correctly labeled points: ", (y_test == y_pred).sum())
+
+  # Create a meshgrid based on feature ranges
+  x_min, x_max = x_vis[:, 0].min() - 1, x_vis[:, 0].max() + 1
+  y_min, y_max = x_vis[:, 1].min() - 1, x_vis[:, 1].max() + 1
+  xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100),
+                      np.linspace(y_min, y_max, 100))
+
+  # Predict classes for each point in the meshgrid
+  Z = knn.predict(np.c_[xx.ravel(), yy.ravel()])
+  Z = Z.reshape(xx.shape)
+
+  # Plot decision boundaries and training points
+  pyplot.figure(figsize = (10, 6))
+  pyplot.contourf(xx, yy, Z, alpha = 0.3, cmap = "coolwarm")
+  pyplot.scatter(x_train[:, 0], x_train[:, 1], c = y_train, cmap = "coolwarm", edgecolors = "k", label = "Train")
+  pyplot.scatter(x_test[:, 0], x_test[:, 1], c = y_test, cmap = "coolwarm", marker = "s", edgecolors = "k", label = "Test")
+  pyplot.xlabel(scikit_iris.feature_names[0])
+  pyplot.ylabel(scikit_iris.feature_names[1])
+  pyplot.title("KNN Decision Boundary (k = 5)")
+  pyplot.legend()
+  pyplot.show()
+
+  # Compute accuracy
+  print(f"Accuracy Score: ", accuracy_score(y_test, y_pred))
+
+# knn()
+
 ##########################
 # Classification Results #
 ##########################
 def classification_results():
-  names = ['SVM', 'Naive Bayes', 'LDA']
-  classifiers = [svm.SVC(), GaussianNB(), LDA()]
+  names = ['SVM', 'Naive Bayes', 'LDA', 'QDA', 'RDA', 'Decision Tree with Gini', 'Decision Tree with Entropy', 'Random Forest', 'KNN', 'Neural Network']
+  classifiers = [
+    svm.SVC(), 
+    GaussianNB(), 
+    LDA(), 
+    QDA(), 
+    QDA(reg_param = 0.5), 
+    DecisionTreeClassifier(criterion = 'gini', max_depth = 3, random_state = 0), 
+    DecisionTreeClassifier(criterion = 'entropy', max_depth = 3, random_state = 0),
+    RandomForestClassifier(),
+    KNeighborsClassifier(),
+    MLPClassifier(alpha = 1, max_iter = 1000)
+  ]
 
   scikit_iris = datasets.load_iris()
   x, y = scikit_iris.data, scikit_iris.target
-  x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 100)
+  x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.5, random_state = 0)
 
   for name, clf in zip(names, classifiers):
     clf.fit(x_train, y_train)
