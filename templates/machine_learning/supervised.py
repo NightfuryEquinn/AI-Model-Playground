@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from pandas.plotting import scatter_matrix
 from sklearn import svm, datasets
+from sklearn import linear_model
 from sklearn.datasets import make_classification
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -13,6 +14,8 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.linear_model import LogisticRegression
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
+from statsmodels import api as sm
+import scipy.optimize as optimization
 from matplotlib import pyplot
 import joblib
 from sklearn.tree import DecisionTreeClassifier, plot_tree
@@ -391,4 +394,88 @@ def classification_results():
     print(f"{name} - Prediction Species: {scikit_iris.target_names[p[0]]}")
     print("")
 
-classification_results()
+# classification_results()
+
+##############
+# Regression #
+##############
+def regression():
+  x = [0, 1, 2, 3, 4, 5, 6, 7]
+  y = [3, 5, 5, 6, 8, 9, 12, 16]
+
+  # Linear
+  x1 = sm.add_constant(x)
+
+  model = sm.OLS(y, x1)
+  results = model.fit()
+  print(results.params)
+  print(results.summary())
+
+  y_pred = results.predict(x1)
+
+  pyplot.scatter(x, y)
+  pyplot.xlabel('X')
+  pyplot.ylabel('Y')
+  pyplot.plot(x, y_pred, "r")
+  pyplot.show()
+
+  # Polynomial
+  y1 = [3, 5, 5, 6, 8, 7, 4, 2]
+
+  mymodel = np.poly1d(np.polyfit(x, y1, 3))
+  print(mymodel)
+
+  myline = np.linspace(0, 7, 100)
+  pyplot.scatter(x, y1)
+  pyplot.plot(myline, mymodel(myline))
+  pyplot.show()
+
+# regression()
+
+#########################
+# Least Squares Fitting #
+#########################
+def lsf():
+  x = np.array([0, 1, 2, 3, 4, 5])
+  y = np.array([100, 90, 60, 30, 20, 1])
+
+  def myFunc(x, a, b, c):
+    return a * np.exp(-b * x) + c
+  
+  popt, pcov = optimization.curve_fit(myFunc, x, y)
+  print('Best fit a b c: ', popt)
+  print('Best fit covariance: ', pcov)
+
+# lsf()
+
+##############################
+# Multiple Linear Regression #
+##############################
+def mlr():
+  x = np.array([[0, 3, 5], [1, 4, 6], [2, 5, 6], [3, 6, 8], [4, 7, 9]])
+  y = np.array([3, 5, 5, 6, 8])
+
+  reg = linear_model.LinearRegression()
+  reg.fit(x, y)
+  print('Coefficient: \n', reg.coef_)
+  print('Intercept: \n', reg.intercept_)
+
+  pred = reg.predict([[5, 8, 10]])
+  print('Prediction: \n', pred)
+
+# mlr()
+
+#######################
+# Logistic Regression #
+#######################
+def log_reg():
+  x = np.array([[0], [1], [2], [3], [4], [5]])
+  y = np.array([1, 2, 3, 30, 32, 31])
+
+  clf = LogisticRegression(random_state = 0).fit(x, y)
+  print(clf.predict([[6]]))
+
+  print(clf.predict_proba([[6]]))
+  print(clf.score(x, y))
+
+# log_reg()

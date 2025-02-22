@@ -3,9 +3,9 @@ from sklearn.decomposition import PCA
 import numpy as np
 from matplotlib import pyplot
 
-############################################
-# Using Principal Component Analysis (PCA) #
-############################################
+######################################
+# Principal Component Analysis (PCA) #
+######################################
 def pca():
   iris_data = datasets.load_iris()
   iris_x = iris_data.data
@@ -43,4 +43,29 @@ def pca():
   print("Explained Variance Ratio:", pca.explained_variance_ratio_)
   print("Cumulative Explained Variance:", np.cumsum(pca.explained_variance_ratio_))
 
-pca()
+# pca()
+
+###########################
+# Hierarchical Clustering #
+###########################
+
+
+######################
+# K-means Clustering #
+######################
+
+
+########
+# K-NN #
+########
+
+
+################################
+# Singular-value Decomposition #
+################################
+
+
+##################################
+# Independent Component Analysis #
+##################################
+
