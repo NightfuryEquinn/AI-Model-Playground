@@ -1,4 +1,4 @@
-AI-Model-Playground
+# AI-Model-Playground
 A testing ground for training AI models
 
 ### Credits
