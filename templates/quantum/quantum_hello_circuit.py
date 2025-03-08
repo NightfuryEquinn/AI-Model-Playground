@@ -1,20 +1,15 @@
 import os
 from dotenv import load_dotenv
-from qiskit import QuantumCircuit
-from qiskit.primitives import BackendSampler
-from qiskit_ibm_provider import IBMProvider as IBMQ
+from qiskit import QuantumCircuit, transpile
 from qiskit_aer import Aer
+from qiskit_ibm_runtime import QiskitRuntimeService
 
 # Loading IBM Quantum key
 load_dotenv()
 QISKIT_KEY = os.getenv('QISKIT_KEY')
 
-# Access IBM Quantum account
-if not IBMQ.saved_accounts():
-  IBMQ.save_account(QISKIT_KEY)
-
 # Load account
-provider = IBMQ()
+provider = QiskitRuntimeService(channel = 'ibm_quantum', token = QISKIT_KEY)
 
 # Create Quantum circuit acting on Q register
 circuit = QuantumCircuit(2, 2)
@@ -29,17 +24,19 @@ circuit.cx(0, 1)
 circuit.measure([0, 1], [0, 1])
 
 # Use Aer's qasm_simulator
-simulator = Aer.get_backend('qasm_simulator')
+backend = Aer.get_backend('qasm_simulator')
 
-# Execute the cirucit on the qasm simulator
-sampler = BackendSampler(simulator)
-job = sampler.run([circuit])
+# Transpile the circuit for the simulator
+compiled_circuit = transpile(circuit, backend)
+
+# Execute the circuit
+job = backend.run(compiled_circuit)
 
 # Grab results from the job
 result = job.result()
 
 # Return counts
-counts = result.quasi_dists[0]
+counts = result.get_counts()
 print(f"Total count for 00 and 11 are: ", counts)
 
 # Draw circuit
