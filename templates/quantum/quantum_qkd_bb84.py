@@ -26,7 +26,7 @@ for bit, basis in zip(alice_bits, alice_bases):
   circuits.append(qc)
 
 # Simulate eavesdropping
-eve_present = True
+eve_present = False
 eve_bases = np.random.randint(2, size = num_bits) if eve_present else None # Eve picks random bases
 eve_results = []
 
